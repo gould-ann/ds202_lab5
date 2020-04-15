@@ -4,11 +4,18 @@ author: "Ann Gould & Henry Underhill"
 date: "4/15/2020"
 output: html_document
 ---
+```{r}
+library(maps)
+library(classdata)
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-library(ggplot2)
 accident <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
 person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
 ```
@@ -62,4 +69,42 @@ ggplot(total_summary, aes(x=HOUR, y=accidents, fill=SEX)) + geom_bar(stat="ident
 ```
 
 Based on the visual, we see a few interesting points. We see that more accidents occur during late hours that lead into the next day on the weekends. We see during the weekday, accidents are down and typically only occur between 15:00 and 20:00. We see that in all cases, males have more accidents than females based on our data. However, the two sexes follow similar trends. 
+
+7 & 8 Now plot a choropleth map of accidents on a county level
+
+```{r}
+
+# CLEANING DATA
+glc <- read_excel("FRPP_GLC.xlsx")
+county <- map_data("county")
+
+glc$`State Code` <- as.integer(glc$`State Code`)
+glc$`County Code` <- as.integer(glc$`County Code`)
+
+cleaned_data = inner_join(accident,glc, by= c("COUNTY"="County Code", "STATE" = "State Code")) 
+
+cleaned_data <- cleaned_data %>%
+                  select(LATITUDE,LONGITUD,COUNTY,DAY,MONTH,YEAR,HOUR,"State Name")
+```
+```{r}
+foo <- ggplot(county, aes(x=long, y=lat)) + geom_polygon(aes(group=group))
+foo <- foo + geom_point(aes(x=LONGITUD, y=LATITUDE), data=accident, size=0.0001, color="yellow")
+foo <- foo + xlim(-125, -67)
+foo <- foo + ylim(24, 50)
+foo
+```
+
+
+Accidents are more likely to occur in urban areas.
+
+```{r}
+accident
+foo <- ggplot(county, aes(x=long, y=lat)) + geom_polygon(aes(group=group))
+foo <- foo + geom_point(aes(x=LONGITUD, y=LATITUDE), data=accident, size=0.0001, fill=accident$MONTH)
+foo <- foo + scale_fill_manual(breaks = c("1", "2", "3"), 
+                       values=c("red", "blue", "green"))
+foo <- foo + xlim(-125, -67)
+foo <- foo + ylim(24, 50)
+foo
+```
 
