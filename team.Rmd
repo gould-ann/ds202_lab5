@@ -1,0 +1,65 @@
+---
+title: "team"
+author: "Ann Gould & Henry Underhill"
+date: "4/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+accident <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
+person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
+```
+
+# Part One
+
+1. Are there some days of the week where more accidents happen than on others (use variable DAY_WEEK)?
+
+```{r}
+accident %>% group_by(DAY_WEEK) %>% summarize(total_accidents = n())
+ggplot(accident, aes(x=DAY_WEEK, fill = DAY_WEEK)) + geom_histogram(binwidth = 0.5)+ xlab("Day of Week") + ylab("Accidents")
+```
+
+It appears that most accidents occur on Friday, Saturday, and Sunday (the weekend). This makes sense, since people are more likely to attend events in busy traffic. However, it is interesting that more accidents don't occur during weekdays, when there is rush hour.
+
+2. What time of the day to accidents happen (use variable HOUR)?
+
+```{r}
+accident %>% filter(HOUR <= 24) %>%
+ggplot(aes(x=HOUR, fill = )) + geom_bar() + xlab("Hour of Day") + ylab("Accidents")
+```
+
+Accidents typically occur between 15:00 to 20:00 (3:00PM to 8:00PM). This makes sense, due to these being the typically busiest times of traffic, with people driving home from work and to events. 
+
+3. What is the number of accidents with at least one drunk driver (use variable DRUNK_DR)?
+
+```{r}
+accident %>% filter(DRUNK_DR > 0) %>% summarize(total_drunk = n())
+accident %>% summarize(total = n())
+```
+
+There are 8,769 accidents in this data set with at least one drunk driver. Given that there are 34,247 total accidents in this dataset, this means that ~25.61% of accidents in this data set have at least one drunk driver. 
+
+4. In the person table, dentify drivers (PER_TYP == 1, see FARS manual) and subset on them.
+
+```{r}
+drivers = person %>% filter(PER_TYP == 1)
+```
+
+5. Join accident and person table (work out which variable(s) to use)
+
+```{r}
+joined <- left_join(person, accident)
+```
+
+6. Tally the number of accidents by day of the week (DAY_WEEK), hour of the day (HOUR) and gender (SEX). Visualize the results.
+
+```{r}
+total_summary = joined %>% mutate(SEX = factor(SEX, levels=c(1, 2), labels=c('MALE', 'FEMALE'))) %>% filter(!is.na(SEX)) %>% filter(HOUR <= 24) %>% group_by(DAY_WEEK, HOUR, SEX) %>% summarize(accidents=n())
+ggplot(total_summary, aes(x=HOUR, y=accidents, fill=SEX)) + geom_bar(stat="identity", position="dodge") + xlab("HOUR") + ylab("Accidents") + facet_wrap(~DAY_WEEK)
+```
+
+Based on the visual, we see a few interesting points. We see that more accidents occur during late hours that lead into the next day on the weekends. We see during the weekday, accidents are down and typically only occur between 15:00 and 20:00. We see that in all cases, males have more accidents than females based on our data. However, the two sexes follow similar trends. 
+
